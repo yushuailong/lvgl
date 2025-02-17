@@ -78,6 +78,8 @@ typedef struct {
         const void * src;     /**< Pointer to the source data used by image fonts*/
     } gid;                    /**< The index of the glyph in the font file. Used by the font cache*/
     lv_cache_entry_t * entry; /**< The cache entry of the glyph draw data. Used by the font cache*/
+
+    uint32_t size;
 } lv_font_glyph_dsc_t;
 
 /** The bitmaps might be upscaled by 3 to achieve subpixel rendering.*/

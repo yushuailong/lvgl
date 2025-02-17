@@ -155,6 +155,7 @@ static bool freetype_glyph_create_cb(lv_freetype_glyph_cache_data_t * data, void
 
     if(dsc->render_mode == LV_FREETYPE_FONT_RENDER_MODE_OUTLINE) {
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_COMPUTE_METRICS | FT_LOAD_NO_BITMAP | FT_LOAD_NO_AUTOHINT);
+        lv_freetype_outline_add_to_cache(dsc, face, glyph_index, dsc->size);
     }
     else if(dsc->render_mode == LV_FREETYPE_FONT_RENDER_MODE_BITMAP) {
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_COMPUTE_METRICS | FT_LOAD_NO_AUTOHINT);

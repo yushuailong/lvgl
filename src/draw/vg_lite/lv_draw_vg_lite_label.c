@@ -56,7 +56,7 @@ static void draw_letter_bitmap(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * d
 
 #if LV_USE_FREETYPE
     static void freetype_outline_event_cb(lv_event_t * e);
-    static void draw_letter_outline(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * dsc);
+    static void draw_letter_outline(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * dsc, uint32_t size);
 #endif /* LV_USE_FREETYPE */
 
 /**********************
@@ -144,7 +144,7 @@ static void draw_letter_cb(lv_draw_task_t * t, lv_draw_glyph_dsc_t * glyph_draw_
             case LV_FONT_GLYPH_FORMAT_VECTOR: {
                     if(lv_freetype_is_outline_font(glyph_draw_dsc->g->resolved_font)) {
                         glyph_draw_dsc->glyph_data = lv_font_get_glyph_bitmap(glyph_draw_dsc->g, glyph_draw_dsc->_draw_buf);
-                        draw_letter_outline(t, glyph_draw_dsc);
+                        draw_letter_outline(t, glyph_draw_dsc, glyph_draw_dsc->g->size);
                     }
                 }
                 break;
@@ -280,7 +280,7 @@ static void draw_letter_bitmap(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * d
 
 #if LV_USE_FREETYPE
 
-static void draw_letter_outline(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * dsc)
+static void draw_letter_outline(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * dsc, uint32_t size)
 {
     lv_draw_vg_lite_unit_t * u = (lv_draw_vg_lite_unit_t *)t->draw_unit;
     /* get clip area */
@@ -298,7 +298,7 @@ static void draw_letter_outline(lv_draw_task_t * t, const lv_draw_glyph_dsc_t * 
     lv_vg_lite_path_t * outline = (lv_vg_lite_path_t *)dsc->glyph_data;
     const lv_point_t pos = {dsc->letter_coords->x1, dsc->letter_coords->y1};
     /* scale size */
-    const float scale = FT_F26DOT6_TO_PATH_SCALE(lv_freetype_outline_get_scale(dsc->g->resolved_font));
+    const float scale = FT_F26DOT6_TO_PATH_SCALE(lv_freetype_outline_get_scale(dsc->g->resolved_font, size));
     const bool is_rotated = dsc->rotation % 3600 != 0;
 
     /* calc convert matrix */

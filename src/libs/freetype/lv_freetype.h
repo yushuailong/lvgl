@@ -105,7 +105,7 @@ void lv_freetype_outline_add_event(lv_event_cb_t event_cb, lv_event_code_t filte
  * @param font The FreeType font to get the scale of.
  * @return The scale of the FreeType font.
  */
-uint32_t lv_freetype_outline_get_scale(const lv_font_t * font);
+uint32_t lv_freetype_outline_get_scale(const lv_font_t * font, uint32_t size);
 
 /**
  * Check if the font is an outline font.

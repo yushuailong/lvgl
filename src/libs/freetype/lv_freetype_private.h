@@ -144,6 +144,9 @@ void lv_freetype_set_cbs_image_font(lv_freetype_font_dsc_t * dsc);
 lv_cache_t * lv_freetype_create_draw_data_outline(uint32_t cache_size);
 void lv_freetype_set_cbs_outline_font(lv_freetype_font_dsc_t * dsc);
 
+void lv_freetype_outline_add_to_cache(lv_freetype_font_dsc_t * dsc, FT_Face face, FT_UInt glyph_index,
+                                      uint32_t size);
+
 /**********************
  *      MACROS
  **********************/
