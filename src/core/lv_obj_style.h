@@ -307,6 +307,8 @@ static inline int32_t lv_obj_get_style_transform_scale_y_safe(const lv_obj_t * o
  */
 lv_opa_t lv_obj_get_style_opa_recursive(const lv_obj_t * obj, lv_part_t part);
 
+lv_color_t lv_obj_get_color_filter_resolved(lv_obj_t* obj);
+
 /**********************
  *      MACROS
  **********************/

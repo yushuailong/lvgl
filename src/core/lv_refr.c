@@ -1108,11 +1108,25 @@ static void refr_obj(lv_layer_t * layer, lv_obj_t * obj)
     if(opa_layered < LV_OPA_MIN) return;
 
     const lv_opa_t layer_opa_ori = layer->opa;
+    const lv_color_t layer_color_filter_ori = layer->color_filter;
+    const lv_opa_t layer_color_filter_opa_ori = layer->color_filter_opa;
 
     /*Normal `opa` (not layered) will just scale down `bg_opa`, `text_opa`, etc, in the upcoming drawings.*/
     const lv_opa_t opa_main = lv_obj_get_style_opa(obj, LV_PART_MAIN);
     if(opa_main < LV_OPA_MAX) {
         layer->opa = LV_OPA_MIX2(layer_opa_ori, opa_main);
+    }
+
+    const lv_color_filter_dsc_t * f = lv_obj_get_style_color_filter_dsc(obj, LV_PART_MAIN);
+    if(f && f->filter_cb) {
+        lv_opa_t f_opa = lv_obj_get_style_color_filter_opa(obj, LV_PART_MAIN);
+        if(layer->color_filter_opa > LV_OPA_TRANSP) {
+            layer->color_filter = f->filter_cb(f, layer->color_filter, f_opa);
+        }
+        else if (f_opa > LV_OPA_TRANSP) {
+            layer->color_filter = f->filter_cb(f, lv_color_black(), LV_OPA_TRANSP);
+            layer->color_filter_opa = f_opa;
+        }
     }
 
     lv_layer_type_t layer_type = lv_obj_get_layer_type(obj);
@@ -1204,6 +1218,8 @@ static void refr_obj(lv_layer_t * layer, lv_obj_t * obj)
 
     /* Restore the original layer opa */
     layer->opa = layer_opa_ori;
+    layer->color_filter = layer_color_filter_ori;
+    layer->color_filter_opa = layer_color_filter_opa_ori;
 }
 
 static uint32_t get_max_row(lv_display_t * disp, int32_t area_w, int32_t area_h)

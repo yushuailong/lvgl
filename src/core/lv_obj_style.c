@@ -630,6 +630,58 @@ lv_opa_t lv_obj_get_style_opa_recursive(const lv_obj_t * obj, lv_part_t part)
     return opa_final;
 }
 
+
+// lv_color_t lv_obj_get_style_color_filter_recursive(const lv_obj_t * obj, lv_part_t part, lv_opa_t* opa)
+// {
+//     LV_PROFILER_STYLE_BEGIN;
+//     lv_obj_t* screen = lv_obj_get_screen(obj);
+
+//     const lv_color_filter_dsc_t * f = lv_obj_get_style_color_filter_dsc(obj, LV_PART_MAIN);
+//     if(opa_obj <= LV_OPA_MIN) {
+//         LV_PROFILER_STYLE_END;
+//         return LV_OPA_TRANSP;
+//     }
+
+//     lv_opa_t opa_final = LV_OPA_COVER;
+//     if(opa_obj < LV_OPA_MAX) {
+//         opa_final = LV_OPA_MIX2(opa_final, opa_obj);
+//     }
+
+//     if(part != LV_PART_MAIN) {
+//         part = LV_PART_MAIN;
+//     }
+//     else {
+//         obj = lv_obj_get_parent(obj);
+//     }
+
+//     while(obj) {
+//         opa_obj = lv_obj_get_style_opa(obj, part);
+//         if(opa_obj <= LV_OPA_MIN) {
+//             LV_PROFILER_STYLE_END;
+//             return LV_OPA_TRANSP;
+//         }
+//         if(opa_obj < LV_OPA_MAX) {
+//             opa_final = LV_OPA_MIX2(opa_final, opa_obj);
+//         }
+
+//         obj = lv_obj_get_parent(obj);
+//     }
+
+//     if(opa_final <= LV_OPA_MIN) {
+//         LV_PROFILER_STYLE_END;
+//         return LV_OPA_TRANSP;
+//     }
+
+//     if(opa_final >= LV_OPA_MAX) {
+//         LV_PROFILER_STYLE_END;
+//         return LV_OPA_COVER;
+//     }
+
+//     LV_PROFILER_STYLE_END;
+//     return opa_final;
+// }
+
+
 void lv_obj_update_layer_type(lv_obj_t * obj)
 {
     lv_layer_type_t layer_type = calculate_layer_type(obj);
@@ -638,6 +690,16 @@ void lv_obj_update_layer_type(lv_obj_t * obj)
         lv_obj_allocate_spec_attr(obj);
         obj->spec_attr->layer_type = layer_type;
     }
+}
+
+lv_color_t lv_obj_get_color_filter_resolved(lv_obj_t* obj)
+{
+    const lv_color_filter_dsc_t * f = lv_obj_get_style_color_filter_dsc(obj, LV_PART_MAIN);
+    if(f && f->filter_cb) {
+        return f->filter_cb(f, lv_color_black(), LV_OPA_TRANSP);
+    }
+
+    return lv_color_black();
 }
 
 /**********************
