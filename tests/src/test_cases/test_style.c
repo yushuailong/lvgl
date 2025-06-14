@@ -71,7 +71,7 @@ void test_custom_prop_ids(void)
     TEST_ASSERT_EQUAL(LV_GLOBAL_DEFAULT()->style_custom_table_size, 64);
 }
 
-const lv_style_const_prop_t const_style_props[] = {
+const lv_style_value_and_prop_t const_style_props[] = {
     LV_STYLE_CONST_WIDTH(51),
     LV_STYLE_CONST_HEIGHT(50),
     LV_STYLE_CONST_PROPS_END

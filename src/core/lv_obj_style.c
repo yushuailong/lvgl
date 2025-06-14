@@ -137,16 +137,15 @@ void lv_obj_add_style(lv_obj_t * obj, const lv_style_t * style, lv_style_selecto
 
 #if LV_OBJ_STYLE_CACHE
     uint32_t * prop_is_set = part == LV_PART_MAIN ? &obj->style_main_prop_is_set : &obj->style_other_prop_is_set;
+    lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
     if(lv_style_is_const(style)) {
-        lv_style_const_prop_t * props = style->values_and_props;
         for(i = 0; props[i].prop != LV_STYLE_PROP_INV; i++) {
             (*prop_is_set) |= STYLE_PROP_SHIFTED(props[i].prop);
         }
     }
     else {
-        lv_style_prop_t * props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
         for(i = 0; i < style->prop_cnt; i++) {
-            (*prop_is_set) |= STYLE_PROP_SHIFTED(props[i]);
+            (*prop_is_set) |= STYLE_PROP_SHIFTED(props[i].prop);
         }
     }
 #endif
@@ -1047,16 +1046,15 @@ static void full_cache_refresh(lv_obj_t * obj, lv_part_t part)
             if(lv_obj_style_get_selector_part(obj->styles[i].selector) != LV_PART_MAIN) continue;
             lv_style_t * style = (lv_style_t *)obj->styles[i].style;
             uint32_t j;
+            lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
             if(lv_style_is_const(style)) {
-                lv_style_const_prop_t * props = style->values_and_props;
                 for(j = 0; props[j].prop != LV_STYLE_PROP_INV; j++) {
                     obj->style_main_prop_is_set |= STYLE_PROP_SHIFTED(props[j].prop);
                 }
             }
             else {
-                lv_style_prop_t * props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
                 for(j = 0; j < style->prop_cnt; j++) {
-                    obj->style_main_prop_is_set |= STYLE_PROP_SHIFTED(props[j]);
+                    obj->style_main_prop_is_set |= STYLE_PROP_SHIFTED(props[j].prop);
                 }
             }
         }
@@ -1067,16 +1065,15 @@ static void full_cache_refresh(lv_obj_t * obj, lv_part_t part)
             if(lv_obj_style_get_selector_part(obj->styles[i].selector) == LV_PART_MAIN) continue;
             lv_style_t * style = (lv_style_t *)obj->styles[i].style;
             uint32_t j;
+            lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
             if(lv_style_is_const(style)) {
-                lv_style_const_prop_t * props = style->values_and_props;
                 for(j = 0; props[j].prop != LV_STYLE_PROP_INV; j++) {
                     obj->style_other_prop_is_set |= STYLE_PROP_SHIFTED(props[j].prop);
                 }
             }
             else {
-                lv_style_prop_t * props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
                 for(j = 0; j < style->prop_cnt; j++) {
-                    obj->style_other_prop_is_set |= STYLE_PROP_SHIFTED(props[j]);
+                    obj->style_other_prop_is_set |= STYLE_PROP_SHIFTED(props[j].prop);
                 }
             }
         }
@@ -1099,8 +1096,8 @@ static void fade_in_anim_completed(lv_anim_t * a)
 
 static bool style_has_flag(const lv_style_t * style, uint32_t flag)
 {
+    lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
     if(lv_style_is_const(style)) {
-        lv_style_const_prop_t * props = style->values_and_props;
         uint32_t i;
         for(i = 0; props[i].prop != LV_STYLE_PROP_INV; i++) {
             if(lv_style_prop_has_flag(props[i].prop, flag)) {
@@ -1109,10 +1106,9 @@ static bool style_has_flag(const lv_style_t * style, uint32_t flag)
         }
     }
     else {
-        lv_style_prop_t * props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
         uint32_t i;
         for(i = 0; i < style->prop_cnt; i++) {
-            if(lv_style_prop_has_flag(props[i], flag)) {
+            if(lv_style_prop_has_flag(props[i].prop, flag)) {
                 return true;
             }
         }

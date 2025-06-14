@@ -215,17 +215,15 @@ void lv_style_copy(lv_style_t * dst, const lv_style_t * src)
     if(src->prop_cnt == 0) return;
 
     int32_t i;
+    lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)src->values_and_props;
     if(lv_style_is_const(src)) {
-        lv_style_const_prop_t * props_and_values = (lv_style_const_prop_t *)src->values_and_props;
-        for(i = 0; props_and_values[i].prop != LV_STYLE_PROP_INV; i++) {
-            lv_style_set_prop(dst, props_and_values[i].prop, props_and_values[i].value);
+        for(i = 0; props[i].prop != LV_STYLE_PROP_INV; i++) {
+            lv_style_set_prop(dst, props[i].prop, props[i].value);
         }
     }
     else {
-        lv_style_prop_t * props = (lv_style_prop_t *)src->values_and_props + src->prop_cnt * sizeof(lv_style_value_t);
-        lv_style_value_t * values = (lv_style_value_t *)src->values_and_props;
         for(i = 0; i < src->prop_cnt; i++) {
-            lv_style_set_prop(dst, props[i], values[i]);
+            lv_style_set_prop(dst, props[i].prop, props[i].value);
         }
     }
 }
@@ -236,11 +234,6 @@ lv_style_prop_t lv_style_register_prop(uint8_t flag)
         lv_style_custom_prop_flag_lookup_table_size = 0;
         last_custom_prop_id = (uint16_t)LV_STYLE_LAST_BUILT_IN_PROP;
     }
-
-    //    if((last_custom_prop_id + 1) != 0) {
-    //        LV_LOG_ERROR("No more custom property IDs available");
-    //        return LV_STYLE_PROP_INV;
-    //    }
 
     /*
      * Allocate the lookup table if it's not yet available.
@@ -280,43 +273,60 @@ bool lv_style_remove_prop(lv_style_t * style, lv_style_prop_t prop)
         return false;
     }
 
-    if(style->prop_cnt == 0)  return false;
-
     LV_PROFILER_STYLE_BEGIN;
+    lv_style_value_and_prop_t * old_props = (lv_style_value_and_prop_t *)style->values_and_props;
+    if(style->prop_cnt == 0) {
+        LV_PROFILER_STYLE_END
+        return false;
+    }
+    else if(style->prop_cnt == 1) {
+        if(old_props[0].prop == prop) {
+            lv_free(old_props);
+            style->values_and_props = NULL;
+            style->prop_cnt = 0;
+            LV_PROFILER_STYLE_END;
+            return true;
+        }
+        else {
+            LV_PROFILER_STYLE_END;
+            return false;
+        }
+    }
 
-    uint8_t * tmp = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-    uint8_t * old_props = (uint8_t *)tmp;
-    uint32_t i;
-    for(i = 0; i < style->prop_cnt; i++) {
-        if(old_props[i] == prop) {
-            lv_style_value_t * old_values = (lv_style_value_t *)style->values_and_props;
-
-            size_t size = (style->prop_cnt - 1) * (sizeof(lv_style_value_t) + sizeof(lv_style_prop_t));
-            uint8_t * new_values_and_props = lv_malloc(size);
-            if(new_values_and_props == NULL) {
+    int32_t left = 0, right = style->prop_cnt - 1;
+    while(left <= right) {
+        int32_t mid = left + ((right - left) >> 1);
+        if(old_props[mid].prop == prop) {
+            /*Found target property*/
+            size_t size = (style->prop_cnt - 1) * sizeof(lv_style_value_and_prop_t);
+            lv_style_value_and_prop_t * new_props = lv_malloc(size);
+            if(new_props == NULL) {
                 LV_PROFILER_STYLE_END;
                 return false;
             }
-
-            style->values_and_props = new_values_and_props;
+            style->values_and_props = new_props;
             style->prop_cnt--;
 
-            tmp = new_values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-            uint8_t * new_props = (uint8_t *)tmp;
-            lv_style_value_t * new_values = (lv_style_value_t *)new_values_and_props;
-
-            uint32_t j;
-            for(i = j = 0; j <= style->prop_cnt;
-                j++) { /*<=: because prop_cnt already reduced but all the old props. needs to be checked.*/
-                if(old_props[j] != prop) {
-                    new_values[i] = old_values[j];
-                    new_props[i++] = old_props[j];
-                }
+            if(mid > 0) {
+                /*Copy properties before target index*/
+                lv_memcpy(new_props, old_props, mid * sizeof(lv_style_value_and_prop_t));
             }
 
-            lv_free(old_values);
+            if(mid < style->prop_cnt) {
+                /*Copy properties after target index*/
+                lv_memcpy(new_props + mid, old_props + mid + 1,
+                          (style->prop_cnt - mid) * sizeof(lv_style_value_and_prop_t));
+            }
+
+            lv_free(old_props);
             LV_PROFILER_STYLE_END;
             return true;
+        }
+        else if(old_props[mid].prop < prop) {
+            left = mid + 1;
+        }
+        else {
+            right = mid - 1;
         }
     }
 
@@ -335,44 +345,56 @@ void lv_style_set_prop(lv_style_t * style, lv_style_prop_t prop, lv_style_value_
 
     LV_ASSERT(prop != LV_STYLE_PROP_INV);
     LV_PROFILER_STYLE_BEGIN;
-    lv_style_prop_t * props;
-    int32_t i;
 
+    /*If properties exist, search for target property*/
     if(style->values_and_props) {
-        props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-        for(i = style->prop_cnt - 1; i >= 0; i--) {
-            if(props[i] == prop) {
-                lv_style_value_t * values = (lv_style_value_t *)style->values_and_props;
-                values[i] = value;
+        lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
+        int32_t left = 0, right = style->prop_cnt - 1;
+        while(left <= right) {
+            int32_t mid = left + ((right - left) >> 1);
+            if(props[mid].prop == prop) {
+                /*Property found, update its value*/
+                props[mid].value = value;
                 LV_PROFILER_STYLE_END;
                 return;
+            }
+            else if(props[mid].prop < prop) {
+                left = mid + 1;
+            }
+            else {
+                right = mid - 1;
             }
         }
     }
 
-    size_t size = (style->prop_cnt + 1) * (sizeof(lv_style_value_t) + sizeof(lv_style_prop_t));
-    uint8_t * values_and_props = lv_realloc(style->values_and_props, size);
-    if(values_and_props == NULL) {
+    size_t size = (style->prop_cnt + 1) * sizeof(lv_style_value_and_prop_t);
+    lv_style_value_and_prop_t * props = lv_realloc(style->values_and_props, size);
+    if(props == NULL) {
         LV_PROFILER_STYLE_END;
         return;
     }
+    style->values_and_props = props;
+    style->prop_cnt ++;
 
-    style->values_and_props = values_and_props;
-
-    props = values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-    /*Shift all props to make place for the value before them*/
-    for(i = style->prop_cnt - 1; i >= 0; i--) {
-        props[i + sizeof(lv_style_value_t) / sizeof(lv_style_prop_t)] = props[i];
+    int32_t i;
+    /*Find insertion point (scan backwards from end)*/
+    for(i = style->prop_cnt - 2; i >= 0; i--) {
+        if(props[i].prop > prop) {
+            /*Shift larger properties forward*/
+            props[i + 1] = props[i];
+        }
+        else {
+            props[i + 1].prop = prop;
+            props[i + 1].value = value;
+            break;
+        }
     }
-    style->prop_cnt++;
 
-    /*Go to the new position with the props*/
-    props = values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-    lv_style_value_t * values = (lv_style_value_t *)values_and_props;
-
-    /*Set the new property and value*/
-    props[style->prop_cnt - 1] = prop;
-    values[style->prop_cnt - 1] = value;
+    /*Handle insertion at beginning (all existing properties were larger)*/
+    if(i < 0) {
+        props[0].prop = prop;
+        props[0].value = value;
+    }
 
     uint32_t group = lv_style_get_prop_group(prop);
     style->has_group |= (uint32_t)1 << group;

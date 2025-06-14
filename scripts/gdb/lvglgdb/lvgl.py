@@ -114,7 +114,7 @@ class LVObject(Value):
         for i in range(count):
             style = styles[i].style
             prop_cnt = style.prop_cnt
-            values_and_props = style.values_and_props.cast("lv_style_const_prop_t", ptr=True)
+            values_and_props = style.values_and_props.cast("lv_style_value_and_prop_t", ptr=True)
             for j in range(prop_cnt):
                 prop = values_and_props[j].prop
                 if prop == LV_STYLE_PROP_INV or prop == LV_STYLE_PROP_ANY:
@@ -194,7 +194,7 @@ def dump_obj_info(obj: LVObject):
     print(f"{clzname}@{hex(obj)} {coords}")
 
 
-#  Dump lv_style_const_prop_t
+#  Dump lv_style_value_and_prop_t
 def dump_style_info(style: Value):
     prop = int(style.prop)
     value = style.value

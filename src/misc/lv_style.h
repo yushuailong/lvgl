@@ -314,7 +314,7 @@ typedef struct {
 typedef struct {
     lv_style_prop_t prop;
     lv_style_value_t value;
-} lv_style_const_prop_t;
+} lv_style_value_and_prop_t;
 
 /**
  * Descriptor of a style (a collection of properties and values).
@@ -467,8 +467,8 @@ lv_style_value_t lv_style_prop_get_default(lv_style_prop_t prop);
 static inline lv_style_res_t lv_style_get_prop_inlined(const lv_style_t * style, lv_style_prop_t prop,
                                                        lv_style_value_t * value)
 {
+    lv_style_value_and_prop_t * props = (lv_style_value_and_prop_t *)style->values_and_props;
     if(lv_style_is_const(style)) {
-        lv_style_const_prop_t * props = (lv_style_const_prop_t *)style->values_and_props;
         uint32_t i;
         for(i = 0; props[i].prop != LV_STYLE_PROP_INV; i++) {
             if(props[i].prop == prop) {
@@ -478,13 +478,18 @@ static inline lv_style_res_t lv_style_get_prop_inlined(const lv_style_t * style,
         }
     }
     else {
-        lv_style_prop_t * props = (lv_style_prop_t *)style->values_and_props + style->prop_cnt * sizeof(lv_style_value_t);
-        uint32_t i;
-        for(i = 0; i < style->prop_cnt; i++) {
-            if(props[i] == prop) {
-                lv_style_value_t * values = (lv_style_value_t *)style->values_and_props;
-                *value = values[i];
+        int32_t left = 0, right = style->prop_cnt - 1;
+        while(left <= right) {
+            int32_t mid = left + ((right - left) >> 1);
+            if(props[mid].prop == prop) {
+                *value = props[mid].value;
                 return LV_STYLE_RES_FOUND;
+            }
+            else if(props[mid].prop < prop) {
+                left = mid + 1;
+            }
+            else {
+                right = mid - 1;
             }
         }
     }
